@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 
@@ -121,6 +122,40 @@ class ApiService extends ChangeNotifier {
       }
     } catch (e) {
       return "Failed to connect to backend: $e";
+    }
+  }
+
+  // --- Speak (TTS — requires auth) ---
+  /// Calls /api/crisis/speak and returns WAV audio as bytes.
+  /// Returns null on failure so the UI can fall back to text gracefully.
+  Future<Uint8List?> speakText(String text) async {
+    try {
+      final response = await http.post(
+        Uri.parse('$baseUrl/crisis/speak'),
+        headers: _authHeaders,
+        body: jsonEncode({'text': text}),
+      );
+      if (response.statusCode == 200) {
+        return response.bodyBytes;
+      }
+      return null;
+    } catch (e) {
+      return null;
+    }
+  }
+
+  // --- Emergency Alert (requires auth) ---
+  /// Sends an SOS alert to the Responder Dashboard.
+  Future<bool> triggerEmergency(String lastMessage) async {
+    try {
+      final response = await http.post(
+        Uri.parse('$baseUrl/crisis/emergency'),
+        headers: _authHeaders,
+        body: jsonEncode({'last_message': lastMessage}),
+      );
+      return response.statusCode == 200;
+    } catch (e) {
+      return false;
     }
   }
 }

@@ -44,6 +44,18 @@ def init_db():
     )
     """)
 
+    # Create Emergencies table (real-time alert from mobile users)
+    conn.execute("""
+    CREATE TABLE IF NOT EXISTS emergencies (
+        id VARCHAR PRIMARY KEY,
+        user_id VARCHAR,
+        user_name VARCHAR,
+        last_message VARCHAR,
+        is_resolved BOOLEAN DEFAULT FALSE,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    )
+    """)
+
     conn.close()
 
 
