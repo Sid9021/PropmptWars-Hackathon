@@ -1,0 +1,15 @@
+{
+  "name": "recover-monorepo",
+  "version": "1.0.0",
+  "private": true,
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "install:all": "npm install"
+  },
+  "devDependencies": {
+    "typescript": "^5.1.3"
+  }
+}
