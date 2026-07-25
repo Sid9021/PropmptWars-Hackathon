@@ -1,10 +1,10 @@
 import uuid
-from fastapi import APIRouter, HTTPException, Depends
+from fastapi import APIRouter, HTTPException, Depends, UploadFile, File
 from fastapi.responses import StreamingResponse, Response
 from pydantic import BaseModel
 from typing import Optional, List
 
-from ..services.genai_service import generate_crisis_script, CrisisRequest, analyze_self_harm_risk
+from ..services.genai_service import generate_crisis_script, CrisisRequest, analyze_self_harm_risk, transcribe_audio
 from ..services.tts_service import generate_speech
 from ..services.auth_service import get_current_user
 from ..db import get_db
@@ -207,3 +207,18 @@ async def resolve_emergency(emergency_id: str, current_user: dict = Depends(get_
         )
 
     return {"message": "Emergency marked as resolved."}
+
+
+@router.post("/transcribe")
+async def transcribe_endpoint(file: UploadFile = File(...), current_user: dict = Depends(get_current_user)):
+    """
+    Transcribe uploaded audio file using Gemini.
+    """
+    audio_bytes = await file.read()
+    mime_type = file.content_type or "audio/wav"
+    try:
+        text = transcribe_audio(audio_bytes, mime_type)
+        return {"text": text}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Transcription failed: {str(e)}")
+

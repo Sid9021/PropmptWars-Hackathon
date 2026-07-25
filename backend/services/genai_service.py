@@ -69,3 +69,15 @@ def analyze_self_harm_risk(text: str) -> dict:
     except Exception as e:
         return {"needs_escalation": False, "reason": "Error parsing risk."}
 
+
+def transcribe_audio(audio_bytes: bytes, mime_type: str) -> str:
+    """
+    Transcribes audio bytes using Gemini 1.5 Flash.
+    """
+    response = model.generate_content([
+        "You are an expert transcriber. Transcribe the spoken audio query exactly as it is, without adding commentary.",
+        {"mime_type": mime_type, "data": audio_bytes}
+    ])
+    return response.text.strip()
+
+

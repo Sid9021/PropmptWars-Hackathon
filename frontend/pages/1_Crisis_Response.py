@@ -17,8 +17,38 @@ AUTH_HEADERS = {"Authorization": f"Bearer {st.session_state.access_token}"}
 st.title("🚨 Crisis Response")
 st.markdown("### I need help now.")
 
+if "transcribed_text" not in st.session_state:
+    st.session_state.transcribed_text = ""
+if "last_audio_bytes" not in st.session_state:
+    st.session_state.last_audio_bytes = None
+
+# Audio input widget for voice recording
+audio_file = st.audio_input("🎤 Record your voice (SOS/Voice Help)")
+
+if audio_file is not None:
+    audio_bytes = audio_file.read()
+    if st.session_state.last_audio_bytes != audio_bytes:
+        st.session_state.last_audio_bytes = audio_bytes
+        with st.spinner("Transcribing your voice..."):
+            try:
+                files = {"file": ("recording.wav", audio_bytes, "audio/wav")}
+                response = httpx.post(
+                    f"{BACKEND_URL}/api/crisis/transcribe",
+                    files=files,
+                    headers=AUTH_HEADERS,
+                    timeout=30.0
+                )
+                if response.status_code == 200:
+                    st.session_state.transcribed_text = response.json().get("text", "")
+                    st.success("Voice transcribed successfully!")
+                else:
+                    st.error(f"Failed to transcribe: {response.text}")
+            except Exception as e:
+                st.error("Failed to connect to backend for transcription.")
+
 situation = st.text_input(
     "What are you experiencing right now?",
+    value=st.session_state.transcribed_text,
     placeholder="e.g. I am having a strong craving"
 )
 
@@ -33,8 +63,25 @@ if st.button("🆘 Get Help (Tap or Voice)", use_container_width=True, type="pri
                     timeout=30.0
                 )
                 if response.status_code == 200:
+                    response_text = response.text
                     st.success("Here is a step-by-step grounding exercise:")
-                    st.write(response.text)
+                    st.write(response_text)
+                    
+                    # Generate speech de-escalation voice output
+                    with st.spinner("Generating voice response..."):
+                        try:
+                            tts_response = httpx.post(
+                                f"{BACKEND_URL}/api/crisis/speak",
+                                json={"text": response_text},
+                                headers=AUTH_HEADERS,
+                                timeout=20.0
+                            )
+                            if tts_response.status_code == 200:
+                                st.audio(tts_response.content, format="audio/wav", autoplay=True)
+                            else:
+                                st.warning("Voice playback generation failed.")
+                        except Exception:
+                            st.warning("Failed to connect to voice service.")
                 elif response.status_code == 401:
                     st.error("Session expired. Please login again.")
                 else:
