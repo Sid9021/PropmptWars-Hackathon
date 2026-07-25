@@ -7,31 +7,46 @@ import 'services/api_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  SharedPreferences prefs = await SharedPreferences.getInstance();
-  bool isLoggedIn = prefs.getBool('isLoggedIn') ?? false;
+  final prefs = await SharedPreferences.getInstance();
+
+  final isLoggedIn = prefs.getBool('isLoggedIn') ?? false;
+  final accessToken = prefs.getString('accessToken');
+  final userId = prefs.getString('userId');
+  final role = prefs.getString('role') ?? 'user';
+
+  // Restore session into ApiService before the widget tree is built
+  final apiService = ApiService();
+  if (isLoggedIn && accessToken != null && accessToken.isNotEmpty) {
+    apiService.restoreSession(accessToken: accessToken, userId: userId ?? '', role: role);
+  }
 
   runApp(
     MultiProvider(
       providers: [
-        ChangeNotifierProvider(create: (_) => ApiService()),
+        ChangeNotifierProvider<ApiService>.value(value: apiService),
       ],
-      child: MyApp(isLoggedIn: isLoggedIn),
+      child: MyApp(isLoggedIn: isLoggedIn && accessToken != null && accessToken.isNotEmpty),
     ),
   );
 }
 
 class MyApp extends StatelessWidget {
   final bool isLoggedIn;
-  
+
   const MyApp({Key? key, required this.isLoggedIn}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Recover App',
+      title: 'Recover',
+      debugShowCheckedModeBanner: false,
       theme: ThemeData(
-        primarySwatch: Colors.teal,
-        scaffoldBackgroundColor: Colors.teal.shade50,
+        primaryColor: Colors.tealAccent,
+        scaffoldBackgroundColor: const Color(0xFF0D1117),
+        colorScheme: ColorScheme.dark(
+          primary: Colors.tealAccent,
+          secondary: Colors.tealAccent,
+        ),
       ),
       home: isLoggedIn ? const DashboardScreen() : const LoginScreen(),
     );

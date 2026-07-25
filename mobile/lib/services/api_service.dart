@@ -77,6 +77,15 @@ class ApiService extends ChangeNotifier {
     notifyListeners();
   }
 
+  // --- Restore Session from SharedPreferences ---
+  /// Called at app startup to rehydrate auth state without an API call.
+  void restoreSession({required String accessToken, required String userId, required String role}) {
+    _accessToken = accessToken;
+    _userId = userId;
+    _role = role;
+    // No notifyListeners needed here — called before widget tree builds
+  }
+
   // --- Chat (requires auth) ---
   Future<Map<String, dynamic>> sendChatMessage(String message) async {
     try {

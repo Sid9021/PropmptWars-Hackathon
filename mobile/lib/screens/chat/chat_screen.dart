@@ -62,7 +62,7 @@ class _ChatScreenState extends State<ChatScreen> {
     _messageController.clear();
 
     final api = Provider.of<ApiService>(context, listen: false);
-    final response = await api.sendChatMessage("user123", text);
+    final response = await api.sendChatMessage(text);
 
     setState(() {
       _messages.add({"role": "ai", "text": response['reply'] ?? "No response"});
