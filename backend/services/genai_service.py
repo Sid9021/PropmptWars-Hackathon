@@ -1,12 +1,12 @@
 import os
-import google.generativeai as genai
+import json
 from pydantic import BaseModel
 from typing import Optional
-import json
+from google import genai
+from google.genai import types
 
-# Setup API Key for Gemini
-genai.configure(api_key=os.getenv("GEMINI_API_KEY", "DUMMY_KEY_FOR_LOCAL_TESTING"))
-model = genai.GenerativeModel('gemini-1.5-flash')
+# Setup API Key for Gemini using the new SDK client
+client = genai.Client(api_key=os.getenv("GEMINI_API_KEY", "DUMMY_KEY_FOR_LOCAL_TESTING"))
 
 class CrisisRequest(BaseModel):
     user_id: str
@@ -26,9 +26,11 @@ def generate_crisis_script(request: CrisisRequest):
     Keep it short, direct, and actionable. Do not provide medical advice.
     """
     
-    # We use streaming in production, but here we can just return the text
-    # or return an iterator for streaming response
-    response = model.generate_content(prompt, stream=True)
+    # Streaming content generation using the new client
+    response = client.models.generate_content_stream(
+        model='gemini-2.5-flash',
+        contents=prompt
+    )
     return response
 
 def classify_sentiment(text: str):
@@ -45,7 +47,10 @@ def classify_sentiment(text: str):
     - recommended_action (e.g. "show grounding exercise", "log positive day")
     """
     
-    response = model.generate_content(prompt)
+    response = client.models.generate_content(
+        model='gemini-2.5-flash',
+        contents=prompt
+    )
     return response.text
 
 def analyze_self_harm_risk(text: str) -> dict:
@@ -62,22 +67,25 @@ def analyze_self_harm_risk(text: str) -> dict:
     - reason (string): Brief explanation.
     """
     try:
-        response = model.generate_content(prompt)
+        response = client.models.generate_content(
+            model='gemini-2.5-flash',
+            contents=prompt
+        )
         # Strip potential markdown code blocks
         clean_text = response.text.strip().replace("```json", "").replace("```", "")
         return json.loads(clean_text)
     except Exception as e:
         return {"needs_escalation": False, "reason": "Error parsing risk."}
 
-
 def transcribe_audio(audio_bytes: bytes, mime_type: str) -> str:
     """
-    Transcribes audio bytes using Gemini 1.5 Flash.
+    Transcribes audio bytes using Gemini 2.5 Flash via the new SDK.
     """
-    response = model.generate_content([
-        "You are an expert transcriber. Transcribe the spoken audio query exactly as it is, without adding commentary.",
-        {"mime_type": mime_type, "data": audio_bytes}
-    ])
+    response = client.models.generate_content(
+        model='gemini-2.5-flash',
+        contents=[
+            types.Part.from_bytes(data=audio_bytes, mime_type=mime_type),
+            "You are an expert transcriber. Transcribe the spoken audio query exactly as it is, without adding commentary."
+        ]
+    )
     return response.text.strip()
-
-

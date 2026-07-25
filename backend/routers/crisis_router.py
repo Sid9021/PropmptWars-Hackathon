@@ -222,3 +222,31 @@ async def transcribe_endpoint(file: UploadFile = File(...), current_user: dict =
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Transcription failed: {str(e)}")
 
+
+voice_inputs = {}
+
+@router.post("/voice-input")
+async def post_voice_input(file: UploadFile = File(...), current_user: dict = Depends(get_current_user)):
+    """
+    Handle direct push-to-talk audio uploads and cache the transcription.
+    """
+    audio_bytes = await file.read()
+    mime_type = file.content_type or "audio/wav"
+    try:
+        text = transcribe_audio(audio_bytes, mime_type)
+        voice_inputs[current_user["user_id"]] = text
+        return {"text": text}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Voice processing failed: {str(e)}")
+
+
+@router.get("/voice-input")
+async def get_voice_input(current_user: dict = Depends(get_current_user)):
+    """
+    Retrieve and clear the cached push-to-talk transcription.
+    """
+    user_id = current_user["user_id"]
+    text = voice_inputs.pop(user_id, None)
+    return {"text": text}
+
+
