@@ -40,7 +40,7 @@ st.markdown("### 🎙️ Voice Input (Push-To-Talk)")
 st.caption("Press and hold the button below to speak, then release it to send your message.")
 
 # Embed premium styled custom Push-To-Talk component
-ptt_html = f"""
+ptt_html = """
 <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; font-family: sans-serif; gap: 8px; margin: 10px 0;">
     <button id="record-btn" style="
         background: linear-gradient(135deg, #1f6feb, #0969da);
@@ -70,8 +70,8 @@ ptt_html = f"""
     let audioChunks = [];
     let isRecording = false;
 
-    const backendUrl = "{BACKEND_URL}";
-    const token = "{st.session_state.access_token}";
+    const backendUrl = "BACKEND_URL_PLACEHOLDER";
+    const token = "TOKEN_PLACEHOLDER";
 
     async function startRecording() {
         audioChunks = [];
@@ -89,10 +89,10 @@ ptt_html = f"""
                 formData.append('file', audioBlob, 'recording.wav');
 
                 try {
-                    const response = await fetch(`${{backendUrl}}/api/crisis/voice-input`, {
+                    const response = await fetch(`${backendUrl}/api/crisis/voice-input`, {
                         method: 'POST',
                         headers: {
-                            'Authorization': `Bearer ${{token}}`
+                            'Authorization': `Bearer ${token}`
                         },
                         body: formData
                     });
@@ -146,6 +146,9 @@ ptt_html = f"""
     });
 </script>
 """
+
+# Format placeholders manually to avoid Python f-string curly-brace interpolation errors
+ptt_html = ptt_html.replace("BACKEND_URL_PLACEHOLDER", BACKEND_URL).replace("TOKEN_PLACEHOLDER", st.session_state.access_token)
 
 # Render custom component
 components.html(ptt_html, height=95)
