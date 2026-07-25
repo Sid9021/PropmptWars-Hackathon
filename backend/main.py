@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from .routers import crisis_router, prevent_router
+from .routers import crisis_router, prevent_router, auth_router
 from .db import init_db
 
 app = FastAPI(title="Recover Platform API")
@@ -13,6 +13,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+app.include_router(auth_router.router)
 app.include_router(crisis_router.router)
 app.include_router(prevent_router.router)
 

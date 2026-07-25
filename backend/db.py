@@ -6,8 +6,20 @@ DB_FILE = os.getenv("DUCKDB_FILE", "recover.duckdb")
 
 def init_db():
     conn = duckdb.connect(DB_FILE)
-    
-    # Create Users table
+
+    # Create Credentials table (login info, separate from recovery profile)
+    conn.execute("""
+    CREATE TABLE IF NOT EXISTS credentials (
+        id VARCHAR PRIMARY KEY,
+        email VARCHAR UNIQUE NOT NULL,
+        hashed_password VARCHAR NOT NULL,
+        role VARCHAR DEFAULT 'user',
+        is_active BOOLEAN DEFAULT TRUE,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    )
+    """)
+
+    # Create Users table (recovery profile)
     conn.execute("""
     CREATE TABLE IF NOT EXISTS users (
         id VARCHAR PRIMARY KEY,
@@ -18,7 +30,7 @@ def init_db():
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     )
     """)
-    
+
     # Create Logs table
     conn.execute("""
     CREATE TABLE IF NOT EXISTS logs (
@@ -31,8 +43,9 @@ def init_db():
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     )
     """)
-    
+
     conn.close()
+
 
 @contextmanager
 def get_db():
@@ -41,6 +54,7 @@ def get_db():
         yield conn
     finally:
         conn.close()
+
 
 if __name__ == "__main__":
     init_db()

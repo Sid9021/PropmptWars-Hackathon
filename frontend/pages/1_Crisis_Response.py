@@ -1,31 +1,42 @@
 import streamlit as st
 import httpx
-import json
 import os
 
 BACKEND_URL = os.getenv("BACKEND_URL", "http://localhost:8000")
+
 st.set_page_config(page_title="Crisis Response", page_icon="🚨", layout="centered")
 
-st.title("🚨 Crisis Response")
+# --- Auth Guard ---
+if not st.session_state.get("access_token"):
+    st.warning("🔒 Please login from the Home page to access this module.")
+    st.stop()
 
+AUTH_HEADERS = {"Authorization": f"Bearer {st.session_state.access_token}"}
+
+# --- Page UI ---
+st.title("🚨 Crisis Response")
 st.markdown("### I need help now.")
 
-# Placeholder for real voice integration, we use text for prototype MVP if streamlit-webrtc isn't fully set up for stt yet
-situation = st.text_input("What are you experiencing right now?", placeholder="e.g. I am having a strong craving")
+situation = st.text_input(
+    "What are you experiencing right now?",
+    placeholder="e.g. I am having a strong craving"
+)
 
 if st.button("🆘 Get Help (Tap or Voice)", use_container_width=True, type="primary"):
     if situation:
         with st.spinner("Connecting..."):
             try:
-                # In a real app this would stream
                 response = httpx.post(
                     f"{BACKEND_URL}/api/crisis/sos",
-                    json={"user_id": "user123", "substance": "unknown", "situation": situation},
-                    timeout=10.0
+                    json={"user_id": st.session_state.user_id, "substance": "unknown", "situation": situation},
+                    headers=AUTH_HEADERS,
+                    timeout=30.0
                 )
                 if response.status_code == 200:
                     st.success("Here is a step-by-step grounding exercise:")
                     st.write(response.text)
+                elif response.status_code == 401:
+                    st.error("Session expired. Please login again.")
                 else:
                     st.error(f"Error: {response.text}")
             except Exception as e:
