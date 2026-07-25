@@ -1,0 +1,4 @@
+- [ ] Configure Flutter Backend URL
+- [ ] Add Android Permissions (Phone, Location, SMS)
+- [ ] Build Release APK
+- [ ] Provide APK file path
