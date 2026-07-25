@@ -17,7 +17,4 @@ services:
     startCommand: "python -m streamlit run frontend/app.py --server.port $PORT --server.address 0.0.0.0"
     envVars:
       - key: BACKEND_URL
-        fromService:
-          type: web
-          name: recover-backend
-          property: url
+        sync: false # Render will ask you to enter the backend URL during deployment
