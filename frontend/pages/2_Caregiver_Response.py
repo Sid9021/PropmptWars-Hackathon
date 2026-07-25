@@ -1,5 +1,8 @@
 import streamlit as st
 import httpx
+import os
+
+BACKEND_URL = os.getenv("BACKEND_URL", "http://localhost:8000")
 
 st.set_page_config(page_title="Caregiver Response", page_icon="❤️", layout="centered")
 
@@ -19,7 +22,7 @@ if st.button("Generate Response Script", use_container_width=True, type="primary
                 "is_responsive": True if is_responsive == "Yes" else False,
                 "has_naloxone": True if has_naloxone == "Yes" else False
             }
-            response = httpx.post("http://localhost:8000/api/crisis/caregiver", json=req_data, timeout=5.0)
+            response = httpx.post(f"{BACKEND_URL}/api/crisis/caregiver", json=req_data, timeout=5.0)
             if response.status_code == 200:
                 data = response.json()
                 st.write(f"**Action:** {data.get('action')}")

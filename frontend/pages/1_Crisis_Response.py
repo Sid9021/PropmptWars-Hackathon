@@ -1,7 +1,9 @@
 import streamlit as st
 import httpx
 import json
+import os
 
+BACKEND_URL = os.getenv("BACKEND_URL", "http://localhost:8000")
 st.set_page_config(page_title="Crisis Response", page_icon="🚨", layout="centered")
 
 st.title("🚨 Crisis Response")
@@ -17,7 +19,7 @@ if st.button("🆘 Get Help (Tap or Voice)", use_container_width=True, type="pri
             try:
                 # In a real app this would stream
                 response = httpx.post(
-                    "http://localhost:8000/api/crisis/sos",
+                    f"{BACKEND_URL}/api/crisis/sos",
                     json={"user_id": "user123", "substance": "unknown", "situation": situation},
                     timeout=10.0
                 )
