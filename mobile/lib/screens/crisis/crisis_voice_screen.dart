@@ -26,6 +26,8 @@ class _CrisisVoiceScreenState extends State<CrisisVoiceScreen> {
   bool _showEmergencyButton = false;
   bool _emergencySent = false;
   String _lastUserMessage = '';
+  double _soundLevel = 0.0;
+
 
   @override
   void initState() {
@@ -105,16 +107,25 @@ class _CrisisVoiceScreenState extends State<CrisisVoiceScreen> {
     );
 
     if (available) {
-      setState(() => _isListening = true);
+      setState(() {
+        _isListening = true;
+        _soundLevel = -2.0;
+      });
       _speech.listen(
         onResult: (result) {
           if (result.finalResult) {
             setState(() {
               _textController.text = result.recognizedWords;
               _isListening = false;
+              _soundLevel = 0.0;
             });
             _sendMessage(result.recognizedWords);
           }
+        },
+        onSoundLevelChange: (level) {
+          setState(() {
+            _soundLevel = level;
+          });
         },
       );
     } else {
@@ -326,6 +337,34 @@ class _CrisisVoiceScreenState extends State<CrisisVoiceScreen> {
                     ),
                   ),
                 ],
+              ),
+            ),
+
+          // ── Voice Visualizer Wave ──
+          if (_isListening)
+            Container(
+              padding: const EdgeInsets.symmetric(vertical: 14),
+              color: const Color(0xFF161B22),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: List.generate(15, (index) {
+                  // speech_to_text level generally goes from -2 to 10
+                  final normalized = ((_soundLevel + 2) / 12).clamp(0.0, 1.0);
+                  // Create a symmetrical wave scale effect
+                  final scale = [0.2, 0.4, 0.6, 0.8, 1.0, 1.2, 1.5, 1.7, 1.5, 1.2, 1.0, 0.8, 0.6, 0.4, 0.2][index];
+                  final height = 6.0 + (normalized * 48.0 * scale);
+
+                  return AnimatedContainer(
+                    duration: const Duration(milliseconds: 50),
+                    margin: const EdgeInsets.symmetric(horizontal: 2.5),
+                    width: 3.5,
+                    height: height,
+                    decoration: BoxDecoration(
+                      color: Colors.tealAccent,
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  );
+                }),
               ),
             ),
 
